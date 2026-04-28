@@ -1,0 +1,7 @@
+# CARR-v2 dependencies
+# Install: pip install -r requirements.txt
+
+torch>=2.2.0
+numpy>=1.24
+matplotlib>=3.8
+tqdm>=4.66
