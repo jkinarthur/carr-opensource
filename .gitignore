@@ -26,10 +26,16 @@ outputs/*.csv
 .vscode/
 .idea/
 *.swp
+*.code-workspace
 
 # OS
 .DS_Store
 Thumbs.db
+
+# Local manuscript artifacts
+paper/
+tmp_paper_first8.txt
+guiding base paper.pdf
 
 # PyTorch compiled extensions
 *.so
