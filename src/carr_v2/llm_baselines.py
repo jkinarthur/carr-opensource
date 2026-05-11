@@ -295,7 +295,10 @@ class GPT4Recommender(LLMRecommender):
             recommendations = self._parse_item_ids(text, item_pool)
             return recommendations[:k]
         except Exception as e:
-            print(f"GPT-4 API error: {e}")
+            err = str(e)
+            if "model_not_found" in err or "404" in err:
+                raise RuntimeError(f"Model '{self.model_name}' not available on this API key. Try gpt-4o or gpt-4o-mini.") from e
+            print(f"GPT API error: {e}")
             return item_pool[:k]
 
     def encode_reasoning(self, hidden_states: torch.Tensor) -> torch.Tensor:
@@ -423,6 +426,8 @@ class LlamaGuardRecommender(LLMRecommender):
 
 def get_recommender(model_name: str, **kwargs) -> LLMRecommender:
     """Factory function to instantiate LLM recommender by name."""
+    # API-based models don't accept a device argument
+    api_kwargs = {k: v for k, v in kwargs.items() if k not in ("device",)}
     models = {
         "llama-3.1": lambda: LlamaRecommender("meta-llama/Llama-3.1-8B", **kwargs),
         "llama-3.2": lambda: LlamaRecommender("meta-llama/Llama-3.2-8B", **kwargs),
@@ -430,10 +435,12 @@ def get_recommender(model_name: str, **kwargs) -> LLMRecommender:
         "mistral-7b": lambda: MistralRecommender(**kwargs),
         "qwen-7b": lambda: QwenRecommender("Qwen/Qwen1.5-7B", **kwargs),
         "qwen-14b": lambda: QwenRecommender("Qwen/Qwen1.5-14B", **kwargs),
-        "gpt-4": lambda: GPT4Recommender("gpt-4", **kwargs),
-        "gpt-4-turbo": lambda: GPT4Recommender("gpt-4-turbo", **kwargs),
-        "gpt-3.5-turbo": lambda: GPT4Recommender("gpt-3.5-turbo", **kwargs),
-        "claude-3-5-sonnet": lambda: ClaudeRecommender(**kwargs),
+        "gpt-4o": lambda: GPT4Recommender("gpt-4o", **api_kwargs),
+        "gpt-4o-mini": lambda: GPT4Recommender("gpt-4o-mini", **api_kwargs),
+        "gpt-4": lambda: GPT4Recommender("gpt-4o", **api_kwargs),  # alias -> gpt-4o
+        "gpt-4-turbo": lambda: GPT4Recommender("gpt-4o", **api_kwargs),  # alias -> gpt-4o
+        "gpt-3.5-turbo": lambda: GPT4Recommender("gpt-3.5-turbo", **api_kwargs),
+        "claude-3-5-sonnet": lambda: ClaudeRecommender(**api_kwargs),
         "llama-guard": lambda: LlamaGuardRecommender(**kwargs),
     }
     if model_name not in models:

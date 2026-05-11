@@ -199,22 +199,14 @@ def run_all_baselines(
     # Write results to CSV
     csv_path = os.path.join(out_dir, "llm_baselines_results.csv")
     if results:
+        fieldnames = ["model", "status", "hr_at_10", "ndcg_at_10", "drift_score", "evidence_survival", "num_samples", "error"]
         with open(csv_path, "w", newline="", encoding="utf-8") as f:
-            writer = csv.DictWriter(
-                f,
-                fieldnames=[
-                    "model",
-                    "status",
-                    "hr_at_10",
-                    "ndcg_at_10",
-                    "drift_score",
-                    "evidence_survival",
-                    "num_samples",
-                ],
-            )
+            writer = csv.DictWriter(f, fieldnames=fieldnames, extrasaction="ignore")
             writer.writeheader()
             for r in results:
-                writer.writerow(r)
+                # Ensure all fields present
+                row = {fn: r.get(fn, "") for fn in fieldnames}
+                writer.writerow(row)
     print(f"\nResults written to {csv_path}")
 
     # Write summary metrics
