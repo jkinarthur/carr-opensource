@@ -1058,6 +1058,9 @@ controlled single-configuration evaluation on a synthetic setting
 These runs are not a replacement for the five-benchmark table in
 Table~\ref{tab:main}; they provide an operational snapshot under an
 identical prompt-and-parser pipeline.
+In this manuscript revision, we report completed API baselines and defer
+open-weight local-model baselines (Llama/Mistral/Qwen) to the next update
+after EC2 storage and model-access prerequisites are finalized.
 
 \begin{table}[t]
 \centering
@@ -1234,6 +1237,14 @@ This is closer to an automated training-control mechanism than a
 general architecture search pipeline.
 
 \subsection{Limitations}
+
+\paragraph*{Staged baseline reporting.}
+At submission time, API baseline runs are complete and reported in
+Table~\ref{tab:api_snapshot}. Open-weight local-model baseline runs
+(Llama/Mistral/Qwen) are pending completion because full checkpoint pulls
+require additional EC2 root-volume capacity and, for some models,
+provider-gated repository access. We therefore present the ready results now
+and finalize the remaining local-model rows in the next revision.
 
 \paragraph*{Approximation gap.}
 The first-order bilevel approximation introduces a bias of
