@@ -131,7 +131,7 @@ class LlamaRecommender(LLMRecommender):
         with torch.no_grad():
             outputs = self.model.generate(
                 input_ids,
-                max_length=100,
+                max_new_tokens=200,
                 num_beams=3,
                 output_scores=True,
                 return_dict_in_generate=True,
@@ -187,7 +187,7 @@ class MistralRecommender(LLMRecommender):
         input_ids = self.tokenizer.encode(prompt, return_tensors="pt").to(self.device)
 
         with torch.no_grad():
-            outputs = self.model.generate(input_ids, max_length=100, num_beams=2)
+            outputs = self.model.generate(input_ids, max_new_tokens=200, num_beams=2)
 
         decoded = self.tokenizer.decode(outputs[0], skip_special_tokens=True)
         recommendations = self._parse_item_ids(decoded, item_pool)
@@ -237,7 +237,7 @@ class QwenRecommender(LLMRecommender):
         input_ids = self.tokenizer.encode(prompt, return_tensors="pt").to(self.device)
 
         with torch.no_grad():
-            outputs = self.model.generate(input_ids, max_length=100)
+            outputs = self.model.generate(input_ids, max_new_tokens=200)
 
         decoded = self.tokenizer.decode(outputs[0], skip_special_tokens=True)
         recommendations = self._parse_item_ids(decoded, item_pool)
@@ -403,7 +403,7 @@ class LlamaGuardRecommender(LLMRecommender):
         input_ids = self.tokenizer.encode(prompt, return_tensors="pt").to(self.device)
 
         with torch.no_grad():
-            outputs = self.model.generate(input_ids, max_length=100)
+            outputs = self.model.generate(input_ids, max_new_tokens=200)
 
         decoded = self.tokenizer.decode(outputs[0], skip_special_tokens=True)
         recommendations = self._parse_item_ids(decoded, item_pool)
