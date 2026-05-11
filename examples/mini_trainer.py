@@ -83,6 +83,10 @@ def build_arg_parser() -> argparse.ArgumentParser:
     p.add_argument("--num_workers",  type=int,   default=4)
     p.add_argument("--resume",       type=str,   default=None,
                    help="Checkpoint .pt to resume from")
+    p.add_argument("--early_stop_patience", type=int, default=10,
+                   help="Stop if validation loss does not improve for N epochs")
+    p.add_argument("--early_stop_min_delta", type=float, default=0.01,
+                   help="Minimum validation-loss decrease to count as improvement")
     return p
 
 
@@ -107,6 +111,8 @@ def train(
     data_path: str | None = None,
     num_workers: int = 4,
     resume: str | None = None,
+    early_stop_patience: int = 10,
+    early_stop_min_delta: float = 0.01,
 ) -> None:
     torch.manual_seed(seed)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -161,6 +167,7 @@ def train(
 
     start_epoch = 1
     best_val_loss = float("inf")
+    epochs_without_improve = 0
 
     if resume is not None:
         ckpt = torch.load(resume, map_location=device, weights_only=False)
@@ -315,9 +322,12 @@ def train(
                 "best_val_loss": best_val_loss,
             }, ckpt_path)
 
-        if val_loss < best_val_loss:
+        if val_loss < (best_val_loss - early_stop_min_delta):
             best_val_loss = val_loss
+            epochs_without_improve = 0
             torch.save(raw_model.state_dict(), os.path.join(ckpt_dir, "best_model.pt"))
+        else:
+            epochs_without_improve += 1
 
         if epoch % 10 == 0 or epoch == 1:
             print(
@@ -328,6 +338,13 @@ def train(
                 f"{bilevel_result.lambda_efficiency:.3f}, {bilevel_result.lambda_entropy:.3f}) | "
                 f"lr={current_lr:.2e}"
             )
+
+        if early_stop_patience > 0 and epochs_without_improve >= early_stop_patience:
+            print(
+                f"Early stopping triggered at epoch {epoch} "
+                f"(patience={early_stop_patience}, min_delta={early_stop_min_delta})."
+            )
+            break
 
     print(f"\nTraining complete.")
     print(f"Convergence stabilized@0.5: {convergence_log.stabilized(window=10, tol=0.5)}")
