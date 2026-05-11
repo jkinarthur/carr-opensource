@@ -123,7 +123,11 @@ def run_policy(
     if adaptive_weights:
         params += list(adaptive_weights.parameters())
     optimizer = torch.optim.AdamW(params, lr=lr, weight_decay=weight_decay)
-    scaler = torch.amp.GradScaler(device="cuda", enabled=use_amp)
+    # torch.amp.GradScaler is unavailable in torch 2.2; fall back to cuda.amp.
+    try:
+        scaler = torch.amp.GradScaler("cuda", enabled=use_amp)
+    except (AttributeError, TypeError):
+        scaler = torch.cuda.amp.GradScaler(enabled=use_amp)
 
     train_losses: list[float] = []
     last_out: dict = {}

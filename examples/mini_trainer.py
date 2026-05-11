@@ -153,7 +153,11 @@ def train(
         return 0.5 * (1.0 + math.cos(math.pi * progress))
 
     scheduler = torch.optim.lr_scheduler.LambdaLR(inner_optimizer, lr_lambda=_lr_schedule)
-    scaler = torch.amp.GradScaler(device="cuda", enabled=use_amp)
+    # torch.amp.GradScaler is unavailable in torch 2.2; fall back to cuda.amp.
+    try:
+        scaler = torch.amp.GradScaler("cuda", enabled=use_amp)
+    except (AttributeError, TypeError):
+        scaler = torch.cuda.amp.GradScaler(enabled=use_amp)
 
     start_epoch = 1
     best_val_loss = float("inf")
