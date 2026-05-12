@@ -1058,13 +1058,13 @@ controlled single-configuration evaluation on a synthetic setting
 These runs are not a replacement for the five-benchmark table in
 Table~\ref{tab:main}; they provide an operational snapshot under an
 identical prompt-and-parser pipeline.
-In this manuscript revision, we report completed API baselines and defer
-open-weight local-model baselines (Llama/Mistral/Qwen) to the next update
-after EC2 storage and model-access prerequisites are finalized.
+In this manuscript revision, we report completed API baselines and two
+open-weight local-model baselines (Mistral/Qwen) under the same protocol.
+Llama-3.1 remains gated and is deferred pending access approval.
 
 \begin{table}[t]
 \centering
-\caption{API LLM baseline snapshot (single synthetic configuration).
+\caption{LLM baseline snapshot (single synthetic configuration).
 Lower drift is better.}
 \label{tab:api_snapshot}
 \begin{tabular}{lccc}
@@ -1074,6 +1074,8 @@ Model & HR@10 & NDCG@10 & $\bR(L)$ \\
 GPT-4o       & 0.0060 & 0.0037 & 0.0027 \\
 GPT-4o-mini  & 0.0060 & 0.0043 & 0.0026 \\
 GPT-3.5-turbo& 0.0060 & 0.0019 & 0.0025 \\
+Mistral-7B   & 0.0060 & 0.0038 & 0.0027 \\
+Qwen-7B      & 0.0060 & 0.0038 & 0.0026 \\
 \bottomrule
 \end{tabular}
 \end{table}

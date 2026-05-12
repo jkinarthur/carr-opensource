@@ -1,0 +1,3 @@
+model,status,hr_at_10,ndcg_at_10,drift_score,evidence_survival,num_samples,error
+mistral-7b,success,0.006,0.003839989159778691,0.002734375,nan,500,
+qwen-7b,success,0.006,0.003839989159778691,0.0026328125,nan,500,
