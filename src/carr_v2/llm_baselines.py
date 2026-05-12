@@ -103,6 +103,7 @@ class LlamaRecommender(LLMRecommender):
 
     def __init__(self, model_name: str = "meta-llama/Llama-2-7b-hf", device: str = "cuda"):
         super().__init__(model_name, device)
+        self.max_new_tokens = 64
         try:
             from transformers import AutoTokenizer, AutoModelForCausalLM
 
@@ -127,12 +128,16 @@ class LlamaRecommender(LLMRecommender):
             f"Recommendations:"
         )
         input_ids = self.tokenizer.encode(prompt, return_tensors="pt").to(self.device)
+        attention_mask = torch.ones_like(input_ids)
 
         with torch.no_grad():
             outputs = self.model.generate(
                 input_ids,
-                max_new_tokens=200,
-                num_beams=3,
+                attention_mask=attention_mask,
+                max_new_tokens=self.max_new_tokens,
+                num_beams=1,
+                do_sample=False,
+                pad_token_id=self.tokenizer.eos_token_id,
                 output_scores=True,
                 return_dict_in_generate=True,
             )
@@ -164,6 +169,7 @@ class MistralRecommender(LLMRecommender):
 
     def __init__(self, device: str = "cuda"):
         super().__init__("mistralai/Mistral-7B-Instruct-v0.3", device)
+        self.max_new_tokens = 48
         try:
             from transformers import AutoTokenizer, AutoModelForCausalLM
 
@@ -185,9 +191,17 @@ class MistralRecommender(LLMRecommender):
             f"recommend top {k} items from: {item_pool[:50]} [/INST]"
         )
         input_ids = self.tokenizer.encode(prompt, return_tensors="pt").to(self.device)
+        attention_mask = torch.ones_like(input_ids)
 
         with torch.no_grad():
-            outputs = self.model.generate(input_ids, max_new_tokens=200, num_beams=2)
+            outputs = self.model.generate(
+                input_ids,
+                attention_mask=attention_mask,
+                max_new_tokens=self.max_new_tokens,
+                num_beams=1,
+                do_sample=False,
+                pad_token_id=self.tokenizer.eos_token_id,
+            )
 
         decoded = self.tokenizer.decode(outputs[0], skip_special_tokens=True)
         recommendations = self._parse_item_ids(decoded, item_pool)
@@ -213,6 +227,7 @@ class QwenRecommender(LLMRecommender):
 
     def __init__(self, model_name: str = "Qwen/Qwen1.5-7B", device: str = "cuda"):
         super().__init__(model_name, device)
+        self.max_new_tokens = 64
         try:
             from transformers import AutoTokenizer, AutoModelForCausalLM
 
@@ -235,9 +250,16 @@ class QwenRecommender(LLMRecommender):
             f"Top {k}:"
         )
         input_ids = self.tokenizer.encode(prompt, return_tensors="pt").to(self.device)
+        attention_mask = torch.ones_like(input_ids)
 
         with torch.no_grad():
-            outputs = self.model.generate(input_ids, max_new_tokens=200)
+            outputs = self.model.generate(
+                input_ids,
+                attention_mask=attention_mask,
+                max_new_tokens=self.max_new_tokens,
+                do_sample=False,
+                pad_token_id=self.tokenizer.eos_token_id,
+            )
 
         decoded = self.tokenizer.decode(outputs[0], skip_special_tokens=True)
         recommendations = self._parse_item_ids(decoded, item_pool)
