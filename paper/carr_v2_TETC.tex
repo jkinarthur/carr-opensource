@@ -1030,7 +1030,7 @@ Fixed-Late       & 0.0267 & 0.0121 & 0.0084 & 0.0043 & 0.0108 & 0.0052 & 0.0109 
 KV-Pruning       & 0.0470 & 0.0202 & 0.0119 & 0.0061 & 0.0109 & 0.0054 & 0.0117 & 0.0111 & 0.0087 & 0.0044\\
 Token-Pruning    & 0.0440 & 0.0209 & 0.0077 & 0.0039 & 0.0109 & 0.0056 & 0.0117 & 0.0111 & 0.0055 & 0.0027\\
 DARL             & 0.0652 & 0.0322 & 0.0098 & 0.0050 & 0.0158 & 0.0088 & \textbf{0.0125} & 0.0121 & 0.0105 & 0.0051\\
-DARL (learnable) & \multicolumn{10}{c}{Pending full five-dataset EC2 training run}\\
+DARL (learnable) & \multicolumn{10}{c}{Matched 4-dataset run complete (ML-1M/Beauty/Toys/Steam); see Fig.~\ref{fig:learnable_delta}. Yelp pending.}\\
 \midrule
 \multicolumn{11}{l}{\textit{Group II: LLM-based recommendation baselines}}\\
 LLMRec           & 0.0767 & 0.0450 & 0.0111 & 0.0068 & 0.0214\dag & 0.0154\dag & 0.0117 & 0.0079 & 0.0128 & 0.0085\\
@@ -1044,7 +1044,8 @@ GRU4Rec          & 0.0351 & 0.0193 & 0.0084 & 0.0035 & 0.0081 & 0.0043 & 0.0000 
 \end{tabular}
 \vspace{0.5em}
 
-\footnotesize{DARL (learnable) is pending full five-dataset EC2 execution.
+\footnotesize{DARL (learnable) matched 4-dataset run is complete (ML-1M/Beauty/Toys/Steam);
+Yelp remains pending in this revision.
 DARL (fixed-$\lambdavec$) is a simplified ablation variant of the
 proposed method (Policy~A) using hand-tuned weights and threshold
 depth selection; results shown for ablation comparison.}
@@ -1224,7 +1225,12 @@ $\Delta$HR@10 = HR@10$_{\text{learnable}}$ - HR@10$_{\text{fixed}}$
 with 95\% confidence intervals.
 Confidence intervals are computed for the learnable model using the
 Wilson interval on validation hits and shifted by the fixed baseline value.
-This figure is generated automatically after the learnable sweep finishes.
+Using protocol-matched fixed baselines trained and evaluated with the same
+real-dataset pipeline, the estimated deltas are negative on all four completed
+datasets: ML-1M $-0.076$, Beauty $-0.291$, Toys $-0.239$, and Steam $-0.034$.
+All 95\% confidence intervals remain below zero in this run, indicating that
+the fixed-$\lambdavec$ Policy~A baseline outperforms the current learnable
+configuration under this evaluation protocol.
 
 \begin{figure}[t]
   \centering
@@ -1238,7 +1244,7 @@ This figure is generated automatically after the learnable sweep finishes.
   }
   \caption{Per-dataset gain of learnable DARL over fixed DARL in HR@10,
   with 95\% confidence intervals.
-  Positive values indicate that adaptive-$\lambdavec$ improves recommendation quality.}
+  Positive values favor learnable DARL; negative values favor fixed DARL.}
   \label{fig:learnable_delta}
 \end{figure}
 

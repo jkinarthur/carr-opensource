@@ -1,0 +1,5 @@
+dataset,hr_at_10,ndcg_at_10,num_samples,checkpoint,data_path
+ML-1M,0.1291390728476821,0.09059928829746249,604,outputs/real_datasets_results/darl_fixed/ML-1M/checkpoints/best_model.pt,data/datasets/ML-1M/interactions.tsv
+Beauty,0.328125,0.27395981071967646,512,outputs/real_datasets_results/darl_fixed/Beauty/checkpoints/best_model.pt,data/datasets/Beauty/interactions.tsv
+Toys,0.2799043062200957,0.2224449210524579,418,outputs/real_datasets_results/darl_fixed/Toys/checkpoints/best_model.pt,data/datasets/Toys/interactions.tsv
+Steam,0.9094881922850659,0.9048050787579837,11899,outputs/real_datasets_results/darl_fixed/Steam/checkpoints/best_model.pt,data/datasets/Steam/interactions.tsv

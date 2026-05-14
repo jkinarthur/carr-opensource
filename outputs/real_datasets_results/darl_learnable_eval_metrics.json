@@ -1,0 +1,69 @@
+{
+  "metrics": [
+    {
+      "dataset": "ML-1M",
+      "learnable_hr10": 0.052980132450331126,
+      "learnable_ndcg10": 0.026407808905327967,
+      "learnable_hits": 32,
+      "num_samples": 604,
+      "learnable_ci_low": 0.03777535354936308,
+      "learnable_ci_high": 0.07383530291113585,
+      "fixed_hr10": 0.1291390728476821,
+      "delta_hr10": -0.076158940397351,
+      "delta_ci_low": -0.09136371929831903,
+      "delta_ci_high": -0.05530376993654626,
+      "checkpoint": "outputs/real_datasets_results/darl_learnable/ML-1M/checkpoints/best_model.pt",
+      "data_path": "data/datasets/ML-1M/interactions.tsv"
+    },
+    {
+      "dataset": "Beauty",
+      "learnable_hr10": 0.037109375,
+      "learnable_ndcg10": 0.014173356578841577,
+      "learnable_hits": 19,
+      "num_samples": 512,
+      "learnable_ci_low": 0.023883584173851596,
+      "learnable_ci_high": 0.057229687807314716,
+      "fixed_hr10": 0.328125,
+      "delta_hr10": -0.291015625,
+      "delta_ci_low": -0.3042414158261484,
+      "delta_ci_high": -0.27089531219268526,
+      "checkpoint": "outputs/real_datasets_results/darl_learnable/Beauty/checkpoints/best_model.pt",
+      "data_path": "data/datasets/Beauty/interactions.tsv"
+    },
+    {
+      "dataset": "Toys",
+      "learnable_hr10": 0.04066985645933014,
+      "learnable_ndcg10": 0.01794605562621577,
+      "learnable_hits": 17,
+      "num_samples": 418,
+      "learnable_ci_low": 0.025544715706706984,
+      "learnable_ci_high": 0.06416099373494125,
+      "fixed_hr10": 0.2799043062200957,
+      "delta_hr10": -0.23923444976076558,
+      "delta_ci_low": -0.25435959051338874,
+      "delta_ci_high": -0.21574331248515446,
+      "checkpoint": "outputs/real_datasets_results/darl_learnable/Toys/checkpoints/best_model.pt",
+      "data_path": "data/datasets/Toys/interactions.tsv"
+    },
+    {
+      "dataset": "Steam",
+      "learnable_hr10": 0.8753676779561308,
+      "learnable_ndcg10": 0.8594341115331299,
+      "learnable_hits": 10416,
+      "num_samples": 11899,
+      "learnable_ci_low": 0.8693113775208633,
+      "learnable_ci_high": 0.8811816812122716,
+      "fixed_hr10": 0.9094881922850659,
+      "delta_hr10": -0.03412051432893515,
+      "delta_ci_low": -0.04017681476420265,
+      "delta_ci_high": -0.02830651107279436,
+      "checkpoint": "outputs/real_datasets_results/darl_learnable/Steam/checkpoints/best_model.pt",
+      "data_path": "data/datasets/Steam/interactions.tsv"
+    }
+  ],
+  "missing": [],
+  "fixed_source": "csv:outputs/real_datasets_results/darl_fixed_eval_metrics.csv",
+  "warnings": [
+    "Large |delta| for Beauty: -0.291016. Check protocol consistency between learnable and fixed baselines."
+  ]
+}
