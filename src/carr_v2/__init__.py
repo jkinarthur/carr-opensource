@@ -6,7 +6,7 @@ from .weighting import AdaptiveLossWeights, AdaptiveWeightsConfig
 from .meta import BilevelLambdaOptimizer, BilevelStepOutput
 from .convergence import CriticalDepthConvergenceLogger, ConvergenceRecord
 from .backbone import MiniBackbone, _compute_collapse_score
-from .data import SyntheticInteractionDataset, make_loaders
+from .data import RealInteractionDataset, SyntheticInteractionDataset, make_loaders
 from .plotting import generate_all as generate_plots
 
 __all__ = [
@@ -23,4 +23,8 @@ __all__ = [
     "BilevelStepOutput",
     "CriticalDepthConvergenceLogger",
     "ConvergenceRecord",
+    "RealInteractionDataset",
+    "SyntheticInteractionDataset",
+    "make_loaders",
+    "generate_plots",
 ]

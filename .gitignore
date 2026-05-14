@@ -13,11 +13,17 @@ build/
 .venv/
 venv/
 env/
+.env
+.env.*
 
 # Outputs (large artifacts — committed selectively)
 outputs/checkpoints/
 outputs/figures/
 outputs/*.csv
+*.log
+coverage.xml
+.coverage*
+htmlcov/
 
 # Jupyter
 .ipynb_checkpoints/
@@ -27,13 +33,28 @@ outputs/*.csv
 .idea/
 *.swp
 *.code-workspace
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
 
 # OS
 .DS_Store
 Thumbs.db
 
 # Local manuscript artifacts
-paper/
+paper/*
+!paper/*.tex
+!paper/*.bib
+!paper/*.bst
+paper/*.aux
+paper/*.bbl
+paper/*.blg
+paper/*.fdb_latexmk
+paper/*.fls
+paper/*.log
+paper/*.out
+paper/*.pdf
+paper/*.toc
 tmp_paper_first8.txt
 guiding base paper.pdf
 

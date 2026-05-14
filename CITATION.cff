@@ -1,0 +1,20 @@
+cff-version: 1.2.0
+title: CARR-v2
+message: If you use this software, please cite it using the metadata below.
+type: software
+authors:
+  - family-names: Arthur
+    given-names: John Kingsley
+repository-code: https://github.com/jkinarthur/carr-opensource
+license: MIT
+version: 0.1.0
+date-released: 2026-05-14
+abstract: >-
+  Differentiable collapse-aware compression framework for LLM-based
+  recommendation with bilevel loss-weight adaptation and learnable depth
+  selection.
+keywords:
+  - recommendation systems
+  - large language models
+  - model compression
+  - pytorch
