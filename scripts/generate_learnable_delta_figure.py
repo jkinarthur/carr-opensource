@@ -30,13 +30,49 @@ from carr_v2.backbone import CARRBackbone
 from carr_v2.data import make_loaders
 
 
-# Fixed DARL values currently reported in Table main.
+# Fixed DARL HR@10 values from darl_fixed_eval_metrics.csv (protocol-matched checkpoints).
 FIXED_HR10 = {
-    "ML-1M": 0.0652,
-    "Beauty": 0.0098,
-    "Toys": 0.0158,
-    "Steam": 0.0105,
+    "ML-1M": 0.1291390728476821,
+    "Beauty": 0.328125,
+    "Toys": 0.2799043062200957,
+    "Steam": 0.9094881922850659,
 }
+
+DEFAULT_FIXED_METRICS_CSV = Path("outputs/real_datasets_results/darl_fixed_eval_metrics.csv")
+
+
+def resolve_fixed_hr10_source(
+    fixed_metrics_csv: Path | None,
+) -> tuple[dict[str, float], str, str | None]:
+    """Resolve fixed HR@10 map and provenance.
+
+    Resolution order:
+      1) Explicit --fixed_metrics_csv
+      2) DEFAULT_FIXED_METRICS_CSV if present
+      3) Built-in FIXED_HR10 constants
+    """
+    fixed_hr10_map = dict(FIXED_HR10)
+    fixed_source = "table_constants"
+    warning_msg: str | None = None
+
+    csv_path = fixed_metrics_csv
+    if csv_path is None and DEFAULT_FIXED_METRICS_CSV.exists():
+        csv_path = DEFAULT_FIXED_METRICS_CSV
+
+    if csv_path is not None:
+        if not csv_path.exists():
+            raise FileNotFoundError(f"--fixed_metrics_csv not found: {csv_path}")
+        overrides = load_fixed_hr10_from_csv(csv_path)
+        fixed_hr10_map.update(overrides)
+        fixed_source = f"csv:{csv_path}"
+    else:
+        warning_msg = (
+            "Warning: using built-in FIXED_HR10 constants. "
+            "For protocol-matched comparisons, provide --fixed_metrics_csv "
+            "or generate outputs/real_datasets_results/darl_fixed_eval_metrics.csv first."
+        )
+
+    return fixed_hr10_map, fixed_source, warning_msg
 
 
 def load_fixed_hr10_from_csv(path: Path) -> dict[str, float]:
@@ -53,7 +89,14 @@ def load_fixed_hr10_from_csv(path: Path) -> dict[str, float]:
             dataset = str(row.get("dataset", "")).strip()
             if not dataset:
                 continue
-            value = row.get("fixed_hr10", row.get("hr_at_10", None))
+            fixed_val = row.get("fixed_hr10", None)
+            hr_val = row.get("hr_at_10", None)
+
+            if fixed_val is not None and str(fixed_val).strip() != "":
+                value = fixed_val
+            else:
+                value = hr_val
+
             if value is None or str(value).strip() == "":
                 continue
             out[dataset] = float(value)
@@ -267,14 +310,9 @@ def main() -> None:
     )
     args = parser.parse_args()
 
-    fixed_hr10_map = dict(FIXED_HR10)
-    fixed_source = "table_constants"
-    if args.fixed_metrics_csv is not None:
-        if not args.fixed_metrics_csv.exists():
-            raise FileNotFoundError(f"--fixed_metrics_csv not found: {args.fixed_metrics_csv}")
-        overrides = load_fixed_hr10_from_csv(args.fixed_metrics_csv)
-        fixed_hr10_map.update(overrides)
-        fixed_source = f"csv:{args.fixed_metrics_csv}"
+    fixed_hr10_map, fixed_source, warning_msg = resolve_fixed_hr10_source(args.fixed_metrics_csv)
+    if warning_msg:
+        print(warning_msg)
 
     metrics: list[dict[str, float | int | str]] = []
     missing: list[str] = []

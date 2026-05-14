@@ -16,8 +16,8 @@ pre-commit install
 
 ```bash
 python -m compileall -q src
-ruff check tests
-ruff format --check tests
+ruff check src tests scripts
+ruff format --check src tests scripts
 pytest
 ```
 

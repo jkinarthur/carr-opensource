@@ -50,8 +50,8 @@ python examples/train_step_demo.py
 
 ```bash
 python -m compileall -q src
-ruff check tests
-ruff format --check tests
+ruff check src tests scripts
+ruff format --check src tests scripts
 pytest
 ```
 

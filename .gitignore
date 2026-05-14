@@ -41,20 +41,8 @@ htmlcov/
 .DS_Store
 Thumbs.db
 
-# Local manuscript artifacts
-paper/*
-!paper/*.tex
-!paper/*.bib
-!paper/*.bst
-paper/*.aux
-paper/*.bbl
-paper/*.blg
-paper/*.fdb_latexmk
-paper/*.fls
-paper/*.log
-paper/*.out
-paper/*.pdf
-paper/*.toc
+# Local manuscript artifacts (all paper files kept offline)
+paper/
 tmp_paper_first8.txt
 guiding base paper.pdf
 
