@@ -1,0 +1,173 @@
+\documentclass[11pt]{article}
+\usepackage[letterpaper,margin=1in]{geometry}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{hyperref}
+\usepackage{enumitem}
+
+\title{Supplementary Material: Reasoning Drift Under Compression}
+\author{John Kingsley Arthur et al.}
+\date{May 2026}
+
+\begin{document}
+\maketitle
+
+\section{Scope of This Supplement}
+This supplement provides (i) expanded derivation details referenced by the main paper,
+(ii) extended numerical tables, and (iii) reproducibility-oriented audit outputs.
+
+\section{Extended Derivations}
+\subsection{Bilevel Gradient Approximation}
+Let
+\begin{equation}
+F(\phi)=\mathcal{L}_{\mathrm{val}}\big(\theta^*(\phi),\lambda(\phi)\big), \quad
+\theta^*(\phi)=\arg\min_{\theta}\mathcal{L}_{\mathrm{train}}(\theta,\lambda(\phi)).
+\end{equation}
+By implicit differentiation,
+\begin{equation}
+\nabla_\phi F
+=\partial_\phi \mathcal{L}_{\mathrm{val}} +
+\partial_\theta \mathcal{L}_{\mathrm{val}}\cdot
+\frac{d\theta^*}{d\phi},
+\end{equation}
+with
+\begin{equation}
+\frac{d\theta^*}{d\phi}= -\big(\nabla^2_{\theta\theta}\mathcal{L}_{\mathrm{train}}\big)^{-1}
+\nabla^2_{\theta\phi}\mathcal{L}_{\mathrm{train}}.
+\end{equation}
+The first-order update used in practice replaces $\theta^*(\phi)$ with one inner step,
+introducing bias of order $O(\xi^2)$ under smoothness assumptions.
+
+\subsection{Critical-Depth Stabilization Intuition}
+The training objective trades geometry/evidence terms against efficiency terms. Locally around
+$k^*$, one obtains a sign change in the depth derivative, yielding a stable neighborhood
+for the learned soft depth rather than a global optimality guarantee.
+
+\section{Extended Tables}
+\subsection{Per-Dataset Fixed vs Learnable Metrics}
+\begin{table}[h]
+\centering
+\caption{Protocol-matched fixed vs learnable metrics from completed datasets.}
+\begin{tabular}{lcccc}
+\toprule
+Dataset & HR@10 (fixed) & HR@10 (learn.) & NDCG@10 (fixed) & NDCG@10 (learn.) \\
+\midrule
+ML-1M   & 0.1291 & 0.0530 & 0.0906 & 0.0264 \\
+Beauty  & 0.3281 & 0.0371 & 0.2740 & 0.0142 \\
+Toys    & 0.2799 & 0.0407 & 0.2224 & 0.0179 \\
+Steam   & 0.9095 & 0.8754 & 0.9048 & 0.8594 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Dataset-Level Significance Summary}
+\begin{table}[h]
+\centering
+\caption{Dataset-level paired $t$-test (learnable $-$ fixed, $n=4$ datasets).}
+\begin{tabular}{lccc}
+\toprule
+Metric & Mean $\Delta$ & $t$ & One-sided $p$ \\
+\midrule
+HR@10   & $-0.1601$ & $-2.58$ & 0.041 \\
+NDCG@10 & $-0.1435$ & $-2.73$ & 0.036 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Resource Profile Table}
+\begin{table}[h]
+\centering
+\caption{Representative ML-1M training-step resource profile (batch=512, seq=50).}
+\begin{tabular}{lccc}
+\toprule
+Variant & FLOPs & Peak Allocated (MiB) & Peak Reserved (MiB) \\
+\midrule
+Fixed DARL      & $1.452708474952\times10^{12}$ & 5910.88 & 5960.00 \\
+Learnable DARL  & $1.452708475206\times10^{12}$ & 6201.92 & 6322.00 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Leakage Audit Protocol}
+The strict Steam audit script checks:
+\begin{enumerate}[leftmargin=*]
+  \item Train/validation overlap at the exact $(\mathrm{sequence}, \mathrm{target})$ level.
+  \item Candidate-set integrity for sampled-negative evaluation (single positive, no positive in negatives).
+  \item Full-catalog vs sampled-negative consistency checks.
+  \item Optional shuffled-target sanity test for checkpointed models.
+\end{enumerate}
+
+\paragraph{Observed audit outcome.}
+The executed Steam audit reported zero train/validation overlap windows,
+candidate-integrity pass, sampled-vs-full consistency pass for fixed and
+learnable checkpoints, shuffled-target sanity pass for both checkpoints,
+and overall\_pass $=\,$true.
+
+\section{Extended Real-Data Ablations (Policies B/C)}
+Table~\ref{tab:ablation_bc_real} reports completed Policy B and Policy C
+results on all four real datasets.
+
+\begin{table}[h]
+\centering
+\caption{Completed real-data ablations for Policy B (fixed $\lambda$, learnable $\kappa$)
+and Policy C (adaptive $\lambda$, fixed-threshold $\kappa$).}
+\label{tab:ablation_bc_real}
+\begin{tabular}{llcc}
+\toprule
+Dataset & Policy & HR@10 & NDCG@10 \\
+\midrule
+ML-1M  & B & 0.1109 & 0.0785 \\
+ML-1M  & C & 0.1159 & 0.0817 \\
+Beauty & B & 0.3320 & 0.2726 \\
+Beauty & C & 0.3301 & 0.2823 \\
+Toys   & B & 0.2799 & 0.2204 \\
+Toys   & C & 0.3110 & 0.2423 \\
+Steam  & B & 0.9099 & 0.9018 \\
+Steam  & C & 0.9098 & 0.9050 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Open-Weight Baseline Expansion Status}
+We executed open-weight baseline runs (mistral-7b and qwen-7b) on the same EC2 g5.xlarge
+instance (22~GB GPU VRAM) to extend the open-model comparison scope. Table~\ref{tab:open_weight_status}
+documents the complete attempt across all four datasets.
+
+Mistral-7b successfully evaluated on ML-1M and Beauty datasets, yielding HR@10 of 0.0625 and 0.0938
+respectively. Qwen-7b encounters CUDA out-of-memory errors immediately after Mistral completes on each
+dataset, preventing Toys and Steam from executing. The 22~GB GPU constraint with $\sim$14~GB per model
+load leaves insufficient headroom for sequential multi-model evaluation. This limitation is documented
+here for full transparency; future work may benefit from larger GPU resources or model quantization strategies.
+
+\begin{table}[h]
+\centering
+\caption{Open-weight baseline execution status (EC2 g5.xlarge, 22~GB GPU, max\_batches=2).}
+\label{tab:open_weight_status}
+\begin{tabular}{llll}
+\toprule
+Dataset & Model & Status & HR@10 \\
+\midrule
+ML-1M  & mistral-7b & success & 0.0625 \\
+ML-1M  & qwen-7b    & CUDA OOM & -- \\
+Beauty & mistral-7b & success & 0.0938 \\
+Beauty & qwen-7b    & CUDA OOM & -- \\
+Toys   & mistral-7b & not evaluated & -- \\
+Toys   & qwen-7b    & not evaluated & -- \\
+Steam  & mistral-7b & not evaluated & -- \\
+Steam  & qwen-7b    & not evaluated & -- \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Run Logs and Artifacts}
+Generated artifacts are saved under:
+\begin{itemize}[leftmargin=*]
+  \item \texttt{outputs/real\_datasets\_results/}
+  \item \texttt{outputs/real\_datasets\_results/audits/}
+  \item \texttt{outputs/real\_datasets\_results/ablations/}
+\end{itemize}
+
+\end{document}

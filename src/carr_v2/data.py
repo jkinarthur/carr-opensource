@@ -73,17 +73,49 @@ class RealInteractionDataset(Dataset):
         sep: str = "\t",
     ):
         import csv as _csv
+        import sys
+        from datetime import datetime
 
         super().__init__()
-        raw: dict[int, list[tuple[int, int]]] = {}  # user_id -> [(item_idx, ts)]
+        raw: dict[int, list[tuple[int, int]]] = {}  # user_idx -> [(item_idx, ts)]
+        user_map: dict[str, int] = {}
         item_map: dict[str, int] = {}
+
+        def _to_timestamp(value: str | None) -> int:
+            if value is None:
+                return 0
+            text = str(value).strip()
+            if not text:
+                return 0
+            try:
+                return int(text)
+            except ValueError:
+                pass
+
+            # Handle common date formats from benchmark dumps.
+            for fmt in ("%Y-%m-%d", "%Y/%m/%d", "%Y-%m-%d %H:%M:%S", "%Y/%m/%d %H:%M:%S"):
+                try:
+                    return int(datetime.strptime(text, fmt).timestamp())
+                except ValueError:
+                    continue
+            return 0
+
+        # Some raw benchmark exports can contain unusually large fields.
+        _csv.field_size_limit(sys.maxsize)
 
         with open(file_path, newline="", encoding="utf-8") as f:
             reader = _csv.DictReader(f, delimiter=sep)
             for row in reader:
-                uid = int(row["user_id"])
-                iid_raw = row["item_id"]
-                ts = int(row.get("timestamp", 0))
+                uid_raw = str(row.get("user_id", "")).strip()
+                iid_raw = str(row.get("item_id", "")).strip()
+                if not uid_raw or not iid_raw:
+                    continue
+                ts = _to_timestamp(row.get("timestamp", "0"))
+
+                if uid_raw not in user_map:
+                    user_map[uid_raw] = len(user_map) + 1
+                uid = user_map[uid_raw]
+
                 if iid_raw not in item_map:
                     item_map[iid_raw] = len(item_map) + 1  # 1-indexed
                 raw.setdefault(uid, []).append((item_map[iid_raw], ts))

@@ -1,0 +1,58 @@
+{
+  "data_path": "data/datasets/Steam/interactions.tsv",
+  "device": "cuda",
+  "n_items": 15402,
+  "n_train_windows": 107091,
+  "n_val_windows": 11899,
+  "n_overlap_windows": 0,
+  "split_leakage_pass": true,
+  "candidate_integrity_pass": true,
+  "candidate_integrity_error": "",
+  "models": {
+    "fixed": {
+      "checkpoint": "outputs/real_datasets_results/darl_fixed/Steam/checkpoints/best_model.pt",
+      "full_catalog": {
+        "hr10": 0.9094881922850659,
+        "ndcg10": 0.9048050787579837,
+        "num_samples": 11899
+      },
+      "sampled_negative": {
+        "hr10": 0.9505000420203379,
+        "ndcg10": 0.9349649124708331,
+        "num_samples": 11899
+      },
+      "shuffled_target_sanity": {
+        "true_hr10": 0.9094881922850659,
+        "shuffled_hr10": 0.011177409866375325,
+        "gap": 0.8983107824186907
+      },
+      "checks": {
+        "sampled_vs_full_gap_pass": true,
+        "shuffled_target_gap_pass": true
+      }
+    },
+    "learnable": {
+      "checkpoint": "outputs/real_datasets_results/darl_learnable/Steam/checkpoints/best_model.pt",
+      "full_catalog": {
+        "hr10": 0.8753676779561308,
+        "ndcg10": 0.8594341115331299,
+        "num_samples": 11899
+      },
+      "sampled_negative": {
+        "hr10": 0.9527691402638877,
+        "ndcg10": 0.9320515113842349,
+        "num_samples": 11899
+      },
+      "shuffled_target_sanity": {
+        "true_hr10": 0.8753676779561308,
+        "shuffled_hr10": 0.01361458946129927,
+        "gap": 0.8617530884948316
+      },
+      "checks": {
+        "sampled_vs_full_gap_pass": true,
+        "shuffled_target_gap_pass": true
+      }
+    }
+  },
+  "overall_pass": true
+}

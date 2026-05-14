@@ -16,8 +16,10 @@ Usage:
 
 import argparse
 import csv
+import gc
 import json
 import os
+import random
 from typing import Optional
 
 import numpy as np
@@ -27,16 +29,34 @@ from carr_v2.data import make_loaders
 from carr_v2.llm_baselines import get_recommender
 
 
+def _cleanup_recommender(recommender) -> None:
+    """Release model/tokenizer references and clear allocator state."""
+    if recommender is not None:
+        # Drop heavy attributes first so the collector can reclaim GPU tensors.
+        if hasattr(recommender, "model"):
+            recommender.model = None
+        if hasattr(recommender, "tokenizer"):
+            recommender.tokenizer = None
+    gc.collect()
+    if torch.cuda.is_available():
+        torch.cuda.empty_cache()
+
+
 def evaluate_model(
     model_name: str,
     val_loader,
     n_items: int,
     device: str = "cuda",
     max_batches: Optional[int] = None,
+    neg_pool_size: int = 99,
+    seed: int = 42,
 ) -> dict:
     """Evaluate a single LLM baseline on validation set."""
     print(f"\nEvaluating {model_name}...")
 
+    rng = random.Random(seed)
+
+    recommender = None
     try:
         recommender = get_recommender(model_name, device=device)
     except Exception as e:
@@ -67,7 +87,13 @@ def evaluate_model(
             # Generate recommendations for each user in batch
             for user_seq, user_target in zip(seqs, targets):
                 user_history = [int(x) for x in user_seq if x > 0]
-                item_pool = list(range(1, min(n_items + 1, 1000)))  # Sample from item pool
+                target_item = int(user_target)
+                # Standard sampled-negative evaluation: neg_pool_size negatives + the target
+                all_items = list(range(1, n_items + 1))
+                negatives = [i for i in all_items if i != target_item]
+                sampled_negs = rng.sample(negatives, min(neg_pool_size, len(negatives)))
+                item_pool = sampled_negs + [target_item]
+                rng.shuffle(item_pool)
 
                 try:
                     recs = recommender.generate_recommendations(
@@ -134,6 +160,8 @@ def evaluate_model(
             "drift_score": 0.0,
             "evidence_survival": 0.0,
         }
+    finally:
+        _cleanup_recommender(recommender)
 
 
 def run_all_baselines(
@@ -144,6 +172,7 @@ def run_all_baselines(
     batch_size: int = 64,
     num_workers: int = 2,
     seed: int = 42,
+    data_path: Optional[str] = None,
     models: Optional[list[str]] = None,
     skip_api: bool = False,
     max_batches: Optional[int] = None,
@@ -166,12 +195,16 @@ def run_all_baselines(
     print("LLM BASELINE EVALUATION")
     print("=" * 80)
     print(f"Output directory: {out_dir}")
-    print(f"Dataset: {n_users} users, {n_items} items, seq_len={seq_len}")
+    if data_path:
+        print(f"Dataset source: real data from {data_path}")
+    else:
+        print(f"Dataset source: synthetic ({n_users} users, {n_items} items, seq_len={seq_len})")
     print(f"Models: {models}")
     print()
 
     # Load validation data (reduced size for faster evaluation)
     _, val_loader, n_items_actual = make_loaders(
+        data_path=data_path,
         n_users=n_users,
         n_items=n_items,
         seq_len=seq_len,
@@ -193,6 +226,7 @@ def run_all_baselines(
             n_items_actual,
             device=device,
             max_batches=max_batches,
+            seed=seed,
         )
         results.append(result)
 
@@ -214,6 +248,7 @@ def run_all_baselines(
     summary = {
         "timestamp": str(np.datetime64("now")),
         "config": {
+            "data_path": data_path,
             "n_users": n_users,
             "n_items": n_items,
             "seq_len": seq_len,
@@ -246,6 +281,7 @@ def run_all_baselines(
 def build_arg_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(description="LLM Baseline Evaluation Runner")
     p.add_argument("--out_dir", type=str, default="outputs_eval")
+    p.add_argument("--data_path", type=str, default=None, help="Path to real interactions.tsv; if omitted uses synthetic data")
     p.add_argument("--n_users", type=int, default=10_000)
     p.add_argument("--n_items", type=int, default=5_000)
     p.add_argument("--seq_len", type=int, default=50)
@@ -277,6 +313,7 @@ if __name__ == "__main__":
     args = build_arg_parser().parse_args()
     run_all_baselines(
         out_dir=args.out_dir,
+        data_path=args.data_path,
         n_users=args.n_users,
         n_items=args.n_items,
         seq_len=args.seq_len,

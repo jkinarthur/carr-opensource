@@ -1,0 +1,9 @@
+dataset,model,status,hr_at_10,ndcg_at_10,drift_score,evidence_survival,num_samples,error
+ML-1M,mistral-7b,success,0.0625,0.02578515112301392,0.00274658203125,nan,128,
+ML-1M,qwen-7b,failed,,,,,,"CUDA out of memory (22GB GPU limit, ~14GB per model); sequential loading causes OOM after Mistral completion"
+Beauty,mistral-7b,success,0.09375,0.05067275547156694,0.002777099609375,nan,128,
+Beauty,qwen-7b,failed,,,,,,"CUDA out of memory (resource constraint); see limitations section"
+Toys,mistral-7b,not_evaluated,,,,,,"Not started: Qwen OOM on prior datasets prevented proceeding"
+Toys,qwen-7b,not_evaluated,,,,,,"Not started: Qwen OOM on prior datasets prevented proceeding"
+Steam,mistral-7b,not_evaluated,,,,,,"Not started: Qwen OOM on prior datasets prevented proceeding"
+Steam,qwen-7b,not_evaluated,,,,,,"Not started: Qwen OOM on prior datasets prevented proceeding"
