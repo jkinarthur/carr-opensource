@@ -39,6 +39,27 @@ FIXED_HR10 = {
 }
 
 
+def load_fixed_hr10_from_csv(path: Path) -> dict[str, float]:
+    """Load per-dataset fixed HR@10 from CSV.
+
+    Expected columns:
+      - dataset (required)
+      - hr_at_10 or fixed_hr10 (required)
+    """
+    out: dict[str, float] = {}
+    with open(path, "r", newline="", encoding="utf-8") as f:
+        reader = csv.DictReader(f)
+        for row in reader:
+            dataset = str(row.get("dataset", "")).strip()
+            if not dataset:
+                continue
+            value = row.get("fixed_hr10", row.get("hr_at_10", None))
+            if value is None or str(value).strip() == "":
+                continue
+            out[dataset] = float(value)
+    return out
+
+
 def wilson_ci(hits: int, total: int, z: float = 1.96) -> tuple[float, float]:
     if total <= 0:
         return 0.0, 0.0
@@ -51,6 +72,7 @@ def wilson_ci(hits: int, total: int, z: float = 1.96) -> tuple[float, float]:
 
 def evaluate_checkpoint(
     dataset_name: str,
+    fixed_hr10: float,
     data_path: Path,
     checkpoint_path: Path,
     batch_size: int,
@@ -108,7 +130,7 @@ def evaluate_checkpoint(
     ndcg = (ndcg_sum / total) if total > 0 else 0.0
     ci_low, ci_high = wilson_ci(hits, total)
 
-    fixed = FIXED_HR10[dataset_name]
+    fixed = fixed_hr10
     return {
         "dataset": dataset_name,
         "learnable_hr10": hr,
@@ -228,13 +250,37 @@ def main() -> None:
         type=Path,
         default=Path("outputs/figures/learnable_vs_fixed_hr_delta_ci.png"),
     )
+    parser.add_argument(
+        "--fixed_metrics_csv",
+        type=Path,
+        default=None,
+        help=(
+            "Optional CSV with protocol-matched fixed DARL HR@10 values. "
+            "Columns: dataset and (hr_at_10 or fixed_hr10)."
+        ),
+    )
+    parser.add_argument(
+        "--warn_delta_abs",
+        type=float,
+        default=0.25,
+        help="Warn if |learnable-fixed| exceeds this threshold.",
+    )
     args = parser.parse_args()
+
+    fixed_hr10_map = dict(FIXED_HR10)
+    fixed_source = "table_constants"
+    if args.fixed_metrics_csv is not None:
+        if not args.fixed_metrics_csv.exists():
+            raise FileNotFoundError(f"--fixed_metrics_csv not found: {args.fixed_metrics_csv}")
+        overrides = load_fixed_hr10_from_csv(args.fixed_metrics_csv)
+        fixed_hr10_map.update(overrides)
+        fixed_source = f"csv:{args.fixed_metrics_csv}"
 
     metrics: list[dict[str, float | int | str]] = []
     missing: list[str] = []
 
     for d in args.datasets:
-        if d not in FIXED_HR10:
+        if d not in fixed_hr10_map:
             continue
         data_path = args.data_root / d / "interactions.tsv"
         checkpoint = args.learnable_root / d / "checkpoints" / "best_model.pt"
@@ -245,6 +291,7 @@ def main() -> None:
         metrics.append(
             evaluate_checkpoint(
                 dataset_name=d,
+                fixed_hr10=fixed_hr10_map[d],
                 data_path=data_path,
                 checkpoint_path=checkpoint,
                 batch_size=args.batch_size,
@@ -261,8 +308,27 @@ def main() -> None:
         )
 
     args.metrics_json.parent.mkdir(parents=True, exist_ok=True)
+    warnings: list[str] = []
+    for row in metrics:
+        d = str(row["dataset"])
+        delta = float(row["delta_hr10"])
+        if abs(delta) > args.warn_delta_abs:
+            warnings.append(
+                f"Large |delta| for {d}: {delta:.6f}. "
+                "Check protocol consistency between learnable and fixed baselines."
+            )
+
     with open(args.metrics_json, "w", encoding="utf-8") as f:
-        json.dump({"metrics": metrics, "missing": missing}, f, indent=2)
+        json.dump(
+            {
+                "metrics": metrics,
+                "missing": missing,
+                "fixed_source": fixed_source,
+                "warnings": warnings,
+            },
+            f,
+            indent=2,
+        )
 
     args.metrics_csv.parent.mkdir(parents=True, exist_ok=True)
     with open(args.metrics_csv, "w", newline="", encoding="utf-8") as f:
@@ -293,8 +359,13 @@ def main() -> None:
     print(args.metrics_json)
     print(args.metrics_csv)
     print(args.figure_out)
+    print(f"Fixed baseline source: {fixed_source}")
     if missing:
         print("Missing datasets:", ", ".join(missing))
+    if warnings:
+        print("Warnings:")
+        for w in warnings:
+            print("-", w)
 
 
 if __name__ == "__main__":
