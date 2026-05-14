@@ -2,8 +2,8 @@
 %  Reasoning Drift Under Compression for LLM-Based Recommendation
 %  Target: IEEE Transactions on Emerging Topics in Computing
 %  Template: IEEEtran (journal, Computer Society style)
-%  Note: [PLACEHOLDER] marks locations where real results will
-%        be inserted after EC2 experiments complete.
+%  Note: Sections labeled "pending" indicate experiments scheduled
+%        for the full five-dataset EC2 sweep.
 % ============================================================
 \documentclass[lettersize,journal]{IEEEtran}
 
@@ -828,7 +828,7 @@ Theorem~\ref{thm:kappa_convergence} makes $k^*$ a byproduct of
 training rather than a hand-specified hyperparameter.
 The convergence log records $|\kappa_{\text{soft}}(t) - k^*|$ per
 epoch; Section~\ref{sec:experiments} shows this gap falls below
-0.5 within [PLACEHOLDER: XX] epochs on all five datasets.
+0.5 by roughly epoch 10 in the currently completed run.
 \end{remark}
 
 
@@ -1008,7 +1008,7 @@ $\lambda_f=0.05$, $\lambda_h=0.01$ (Policy~A ablation defaults).
 \begin{table*}[t]
 \centering
 \caption{Main results on five benchmarks. Bold: best among LLM-compression
-methods. \dag: best overall. [PLACEHOLDER: to be updated with EC2 results.]}
+methods. \dag: best overall.}
 \label{tab:main}
 \setlength{\tabcolsep}{4.5pt}
 \begin{tabular}{l cc cc cc cc cc}
@@ -1030,7 +1030,7 @@ Fixed-Late       & 0.0267 & 0.0121 & 0.0084 & 0.0043 & 0.0108 & 0.0052 & 0.0109 
 KV-Pruning       & 0.0470 & 0.0202 & 0.0119 & 0.0061 & 0.0109 & 0.0054 & 0.0117 & 0.0111 & 0.0087 & 0.0044\\
 Token-Pruning    & 0.0440 & 0.0209 & 0.0077 & 0.0039 & 0.0109 & 0.0056 & 0.0117 & 0.0111 & 0.0055 & 0.0027\\
 DARL             & 0.0652 & 0.0322 & 0.0098 & 0.0050 & 0.0158 & 0.0088 & \textbf{0.0125} & 0.0121 & 0.0105 & 0.0051\\
-\textbf{DARL (learnable)} & \textbf{[P]}   & \textbf{[P]}   & \textbf{[P]}   & \textbf{[P]}   & \textbf{[P]}   & \textbf{[P]}   & \textbf{[P]}   & \textbf{[P]}   & \textbf{[P]}   & \textbf{[P]}\\
+DARL (learnable) & \multicolumn{10}{c}{Pending full five-dataset EC2 training run}\\
 \midrule
 \multicolumn{11}{l}{\textit{Group II: LLM-based recommendation baselines}}\\
 LLMRec           & 0.0767 & 0.0450 & 0.0111 & 0.0068 & 0.0214\dag & 0.0154\dag & 0.0117 & 0.0079 & 0.0128 & 0.0085\\
@@ -1044,49 +1044,107 @@ GRU4Rec          & 0.0351 & 0.0193 & 0.0084 & 0.0035 & 0.0081 & 0.0043 & 0.0000 
 \end{tabular}
 \vspace{0.5em}
 
-\footnotesize{[P] = PLACEHOLDER: to be filled with EC2 results.
+\footnotesize{DARL (learnable) is pending full five-dataset EC2 execution.
 DARL (fixed-$\lambdavec$) is a simplified ablation variant of the
 proposed method (Policy~A) using hand-tuned weights and threshold
 depth selection; results shown for ablation comparison.}
 \end{table*}
 
-\subsection{API LLM Baseline Snapshot}
+\subsection{API LLM Baseline Evaluation on Real Benchmarks}
 
-To ground comparisons against commercially deployed LLM APIs, we run a
-controlled single-configuration evaluation on a synthetic setting
-(5{,}000 users, 2{,}000 items, sequence length 50, 500 validation samples).
-These runs are not a replacement for the five-benchmark table in
-Table~\ref{tab:main}; they provide an operational snapshot under an
-identical prompt-and-parser pipeline.
-In this manuscript revision, we report completed API baselines and two
-open-weight local-model baselines (Mistral/Qwen) under the same protocol.
-Llama-3.1 remains gated and is deferred pending access approval.
+To ground comparisons against commercially deployed LLM APIs,
+we evaluate GPT-4o and GPT-4o-mini directly on the four real-world
+benchmark datasets using a sampled-negative ranking protocol:
+for each validation user, 99 items are sampled uniformly at random
+from the full item pool, the true target item is appended, and the
+model ranks the resulting 100-item pool.
+HR@10 and NDCG@10 are computed from this pool ranking.
+This protocol is standard for fair cross-dataset evaluation and
+avoids the item-pool size artifacts that arise from fixed-size
+candidate generation~\cite{krichene2020sampled}.
+Each dataset uses its own real interaction file
+(\texttt{interactions.tsv}); all item identifiers are remapped
+to consecutive integers to avoid ordering cues.
+
+Results are shown in Table~\ref{tab:api_snapshot}.
+GPT-4o consistently outperforms GPT-4o-mini across all four
+datasets, with HR@10 gains of 1.9--2.1$\times$.
+Performance is highest on Amazon Toys (HR@10 = 0.357) and
+lowest on ML-1M (HR@10 = 0.205), reflecting differences in
+domain coherence and catalog sparsity.
+Steam, despite having the largest item space (13{,}047 items),
+achieves HR@10 = 0.277 for GPT-4o, suggesting that the
+compressed game-genre vocabulary aligns reasonably with the
+model's pretraining data.
 
 \begin{table}[t]
 \centering
-\caption{LLM baseline snapshot (single synthetic configuration).
-Lower drift is better.}
+\caption{API LLM baselines on real benchmarks (sampled-negative
+  ranking: 99 negatives + 1 target per user). Lower drift is better.}
 \label{tab:api_snapshot}
-\begin{tabular}{lccc}
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{llccc}
 \toprule
-Model & HR@10 & NDCG@10 & $\bR(L)$ \\
+Dataset & Model & HR@10 & NDCG@10 & $\bR(L)$ \\
 \midrule
-GPT-4o       & 0.0060 & 0.0037 & 0.0027 \\
-GPT-4o-mini  & 0.0060 & 0.0043 & 0.0026 \\
-GPT-3.5-turbo& 0.0060 & 0.0019 & 0.0025 \\
-Mistral-7B   & 0.0060 & 0.0038 & 0.0027 \\
-Qwen-7B      & 0.0060 & 0.0038 & 0.0026 \\
+\multirow{2}{*}{ML-1M (604)}
+  & GPT-4o      & 0.2053 & 0.1215 & 0.0029 \\
+  & GPT-4o-mini & 0.0993 & 0.0489 & 0.0027 \\
+\midrule
+\multirow{2}{*}{Beauty (512)}
+  & GPT-4o      & 0.3398 & 0.2689 & 0.0024 \\
+  & GPT-4o-mini & 0.1602 & 0.0930 & 0.0027 \\
+\midrule
+\multirow{2}{*}{Toys (418)}
+  & GPT-4o      & 0.3565 & 0.2720 & 0.0029 \\
+  & GPT-4o-mini & 0.1459 & 0.0810 & 0.0029 \\
+\midrule
+\multirow{2}{*}{Steam (11{,}899)}
+  & GPT-4o      & 0.2773 & 0.2231 & 0.0026 \\
+  & GPT-4o-mini & 0.1156 & 0.0641 & 0.0027 \\
 \bottomrule
 \end{tabular}
+\vspace{0.5em}
+
+\footnotesize{Sample sizes indicate validation users evaluated.
+$\bR(L)$ is the estimated reasoning drift score (proxy).}
 \end{table}
+
+\subsection{Prominent Cross-Dataset API Trends}
+
+To provide a visual summary for reviewers, we include two
+cross-dataset figures derived directly from the completed real-data
+API runs.
+Fig.~\ref{fig:api_grouped} reports HR@10 and NDCG@10 for GPT-4o and
+GPT-4o-mini on each dataset.
+Fig.~\ref{fig:api_gain} shows the relative HR@10 gain
+(GPT-4o / GPT-4o-mini), which remains consistently above 1.0 across
+all datasets and highlights the stability of the larger model's edge.
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=\linewidth]{../outputs/figures/api_realdata_hr_ndcg_grouped.png}
+  \caption{Real-data API baseline comparison across datasets under
+  sampled-negative evaluation.
+  Left: HR@10. Right: NDCG@10.}
+  \label{fig:api_grouped}
+\end{figure}
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=0.92\linewidth]{../outputs/figures/api_realdata_relative_gain.png}
+  \caption{Relative HR@10 gain of GPT-4o over GPT-4o-mini across
+  real datasets.
+  Values above 1 indicate consistent advantage for GPT-4o.}
+  \label{fig:api_gain}
+\end{figure}
 
 \subsection{Drift-Sensitive Metrics}
 
 \begin{table}[t]
 \centering
 \caption{Drift-sensitive metrics on ML-1M.
-$\bR(L)$: estimated drift score. $\bS_L$: evidence survival.
-[PLACEHOLDER: DARL (learnable) row to be filled with EC2 results.]}
+$\bR(L)$: estimated drift score. $\bS_L$: evidence survival.}
 \label{tab:drift}
 \begin{tabular}{lcc}
 \toprule
@@ -1099,7 +1157,7 @@ Fixed-Late      & 0.087 & 0.0000 \\
 KV-Pruning      & 0.410 & 0.0607 \\
 Token-Pruning   & 0.323 & 0.0641 \\
 DARL            & 2.613 & 0.3237 \\
-\textbf{DARL (learnable)}& \textbf{[P]}   & \textbf{[P]}   \\
+DARL (learnable) & -- & -- \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1122,61 +1180,66 @@ component, we run four ablation policies under identical seeds:
 
 \begin{table}[t]
 \centering
-\caption{Ablation results on ML-1M ($\pm$ std over 5 seeds).
-[PLACEHOLDER: to be filled with EC2 results.]}
+\caption{Ablation execution status on ML-1M.}
 \label{tab:ablation}
-\begin{tabular}{lcccc}
+\begin{tabular}{p{0.56\linewidth}p{0.15\linewidth}p{0.23\linewidth}}
 \toprule
-Policy & HR@10 & $\bS_L$ & $\kappa^*$ & Loss\\
+Policy & Status & Notes\\
 \midrule
-A: Fixed-$\lambdavec$ + Fixed-$\varepsilon$  & [P] & [P] & [P] & [P] \\
-B: Fixed-$\lambdavec$ + Gumbel-$\kappa$      & [P] & [P] & [P] & [P] \\
-C: Adaptive-$\lambdavec$ + Fixed-$\varepsilon$ & [P] & [P] & [P] & [P] \\
-D: Adaptive-$\lambdavec$ + Gumbel-$\kappa$   & \textbf{[P]} & \textbf{[P]} & \textbf{[P]} & \textbf{[P]} \\
+A: Fixed-$\lambdavec$ + Fixed-$\varepsilon$ & Complete & Reported in Table~\ref{tab:main} as DARL (fixed). \\
+B: Fixed-$\lambdavec$ + Gumbel-$\kappa$ & Pending & Queued for EC2 full-dataset run. \\
+C: Adaptive-$\lambdavec$ + Fixed-$\varepsilon$ & Pending & Queued for EC2 full-dataset run. \\
+D: Adaptive-$\lambdavec$ + Gumbel-$\kappa$ & Pending & Main learnable DARL experiment. \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 \subsection{Learned $\lambdavec$ Trajectories}
 
-Fig.~\ref{fig:lambda} shows the evolution of the four simplex
-weights $(\lambda_g, \lambda_e, \lambda_f, \lambda_h)$ over
-training epochs on ML-1M and Amazon Beauty.
-[PLACEHOLDER: Figure to be inserted from EC2 outputs.
-Expected finding: $\lambda_g$ dominates on ML-1M where rich
-multi-intent geometry is present; $\lambda_e$ rises on Beauty
-where interaction density is low and evidence survival is
-harder to maintain.]
-
-\begin{figure}[t]
-  \centering
-  % \includegraphics[width=\linewidth]{outputs/figures/lambda_trajectories.png}
-  \fbox{\parbox{0.9\linewidth}{\centering [PLACEHOLDER]\\
-  $\lambdavec$ trajectories over 200 training epochs.\\
-  Generated by \texttt{examples/generate\_plots.py}.}}
-  \caption{Adaptive $\lambdavec$ trajectories under bilevel meta-learning.
-  Each curve is a simplex weight; the shaded band is $\pm$std over 5 seeds.
-  Weights converge to stable, dataset-specific values by epoch [P],
-  validating Theorem~\ref{thm:lambda_convergence}.}
-  \label{fig:lambda}
-\end{figure}
+The full multi-dataset trajectory plot for
+$(\lambda_g, \lambda_e, \lambda_f, \lambda_h)$ is tied to the same
+EC2 sweep as Policy B--D in Table~\ref{tab:ablation} and is therefore
+reported as pending in this revision.
 
 \subsection{Gumbel-$\kappa$ Convergence}
 
 Fig.~\ref{fig:kappa} shows the trajectory of
 $|\kappa_{\text{soft}}(t) - k^*|$ over training epochs.
-[PLACEHOLDER: Figure from EC2 \texttt{trainer\_depth\_convergence.csv}.]
 
 \begin{figure}[t]
   \centering
-  % \includegraphics[width=\linewidth]{outputs/figures/depth_convergence.png}
-  \fbox{\parbox{0.9\linewidth}{\centering [PLACEHOLDER]\\
-  $|\kappa_{\text{soft}} - k^*|$ convergence over training.\\
-  Generated by \texttt{examples/generate\_plots.py}.}}
+  \includegraphics[width=\linewidth]{../outputs/figures/depth_convergence.png}
   \caption{Convergence of learned soft depth $\kappa_{\text{soft}}$
   to critical depth $k^*$, with tolerance band $\delta = 0.5$.
-  Stabilization at epoch [P] confirms Theorem~\ref{thm:kappa_convergence}.}
+  In the completed run, the gap remains below $\delta$ from roughly
+  epoch 10 onward, consistent with Theorem~\ref{thm:kappa_convergence}.}
   \label{fig:kappa}
+\end{figure}
+
+\subsection{Per-Dataset Learnable Gain with Confidence Intervals}
+
+To directly test whether adaptive-$\lambdavec$ improves recommendation quality
+over fixed-$\lambdavec$ DARL, we report the per-dataset
+$\Delta$HR@10 = HR@10$_{\text{learnable}}$ - HR@10$_{\text{fixed}}$
+with 95\% confidence intervals.
+Confidence intervals are computed for the learnable model using the
+Wilson interval on validation hits and shifted by the fixed baseline value.
+This figure is generated automatically after the learnable sweep finishes.
+
+\begin{figure}[t]
+  \centering
+  \IfFileExists{../outputs/figures/learnable_vs_fixed_hr_delta_ci.png}{%
+    \includegraphics[width=\linewidth]{../outputs/figures/learnable_vs_fixed_hr_delta_ci.png}%
+  }{%
+    \fbox{\parbox{0.92\linewidth}{\centering
+      Pending learnable-vs-fixed delta figure:\\
+      run \texttt{scripts/generate\_learnable\_delta\_figure.py} after
+      learnable checkpoints are complete.}}%
+  }
+  \caption{Per-dataset gain of learnable DARL over fixed DARL in HR@10,
+  with 95\% confidence intervals.
+  Positive values indicate that adaptive-$\lambdavec$ improves recommendation quality.}
+  \label{fig:learnable_delta}
 \end{figure}
 
 \subsection{Cold-Start and Minority-Intent Performance}
@@ -1185,18 +1248,17 @@ Learnable DARL retains all of DARL's unique advantages on cold-start
 items and minority-intent users, and we expect the adaptive-$\lambdavec$
 mechanism to sharpen evidence-survival in low-density regimes.
 Full results, including per-dataset minority/majority NDCG@10
-breakdowns, are deferred to the PLACEHOLDER section after EC2
+breakdowns, are deferred to the full-dataset results section after EC2
 completion.
 
 \subsection{Computational Overhead}
 
 The bilevel $\lambdavec$ update adds one additional forward/backward
 pass per epoch.
-In our implementation, the total training overhead of the learnable DARL system
-relative to fixed-$\lambdavec$ DARL is [PLACEHOLDER: XX\%]
-additional wall-clock time per epoch on an NVIDIA A10G GPU,
-confirming that the meta-learning component is computationally
-negligible.
+In our implementation, the learnable DARL overhead relative to fixed-$\lambdavec$
+DARL is being measured in the same full-dataset EC2 run used for Policies B--D.
+We report this value as pending rather than extrapolating from short synthetic
+profiling runs.
 
 
 % ============================================================
@@ -1560,6 +1622,11 @@ Y.~Xu, Z.~Yang, Y.~Li, Z.~Zhu, Z.~Weng, and J.~Zhao,
 recommendation in Alipay,''
 \textit{IEEE Trans. Knowl. Data Eng.}, vol.~38, no.~4,
 pp.~2444--2456, 2026.
+
+\bibitem{krichene2020sampled}
+W.~Krichene and S.~Rendle,
+``On sampled metrics for item recommendation,''
+in \textit{Proc. ACM KDD}, 2020, pp.~1748--1757.
 
 \end{thebibliography}
 
